@@ -1,0 +1,34 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  RECIPE: .[].recipe_name
+  LIST: recipes.yaml
+  INGREDIENTS: .[].ingredients.[]|keys|.[]
+  STEPS: .[].steps.[] | select(.step)
+  UNIQUE: awk '!seen[$0]++'
+  GREETING: Hello, World!
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+  compile:
+    cmds:
+      - yq ea ' [.] as $item ireduce ({}; [.]* $item )' *.yaml  > {{.LIST}}
+  search:*:
+    vars:
+      SEARCH: "{{index .MATCH 0}}"
+    cmds:
+      - yq '.[] | select(.recipe_name== "{{.SEARCH}}")|[.]' {{.LIST}}
+  getsteps:
+    cmds:
+      - yq '{{.STEPS}}' {{.LIST}}|{{.UNIQUE}}
+  getrecipes:
+    cmds:
+      - yq '{{.RECIPE}}' {{.LIST}}|{{.UNIQUE}}
+  getingredients:
+    cmds:
+      - yq '{{.INGREDIENTS}}' {{.LIST}} | {{.UNIQUE}}
